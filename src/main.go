@@ -31,10 +31,12 @@ func main() {
 
 	switch os.Args[1] {
 	case "compile":
+		compileFlag.Parse(os.Args[2:])
 		if err := compile(); err != nil {
 			exit(err)
 		}
 	case "emulate":
+		emulateFlag.Parse(os.Args[2:])
 		if err := emulate(); err != nil {
 			exit(err)
 		}
@@ -101,6 +103,6 @@ func executeEmulation(binary []byte) error {
 }
 
 func exit(msg any) {
-	fmt.Println(msg)
+	fmt.Println("Error:", msg)
 	os.Exit(1)
 }

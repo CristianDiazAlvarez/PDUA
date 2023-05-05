@@ -139,7 +139,12 @@ func (r *Runner) UpdateAssemblerView(v *gocui.View) {
 
 	_, screenHeight := v.Size()
 	for i, instruction := range instructions {
-		if (float32(i) < float32(currentLine) - float32(screenHeight) * AutoscrollAt) {
+		var (
+			autoscroll = float32(i) < float32(currentLine)-float32(screenHeight)*AutoscrollAt
+			overflow   = screenHeight >= len(instructions)-i
+		)
+
+		if autoscroll && !overflow {
 			continue
 		}
 
