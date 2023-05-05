@@ -7,26 +7,30 @@ import (
 	"strings"
 )
 
+const (
+	LABLE_PLACEHOLDER = 0x00
+)
+
 func CompileProgram(filepath string) ([]byte, error) {
-	file, err := os.ReadFile(filepath)
+	buffer, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, err
 	}
 
-	return Compile(string(file))
+	return Compile(string(buffer))
 }
 
 func Compile(assembly string) ([]byte, error) {
 	var (
-		binary         = make([]byte, 0)
-		labels         = make(map[string]uint8)
-		labelPositions = make(map[uint8]uint8)
+		binary  = make([]byte, 0)
+		labels  = make(map[string]uint8) // label -> origin
+		queries = make(map[uint8]string) // offset -> label
 	)
 
 	// For each line
 	for i, line := range strings.Split(assembly, "\n") {
 		line = PurifyLine(line)
-		line = UpdateLabels(line, binary, labels, labelPositions)
+		line = UpdateLabels(line, binary, labels)
 
 		// If the line is empty, skip it
 		if line == "" {
@@ -57,9 +61,7 @@ func Compile(assembly string) ([]byte, error) {
 
 				dst, err := ParseRaw(args[4:])
 				if err != nil {
-					// attemp to parse label
-					id := GetLabelID(args[4:], labels)
-					dst = IDToBytecode(id)
+					UpdateQuery(&dst, args[4:], binary, queries)
 				}
 
 				binary = append(binary, 0x03, dst)
@@ -73,41 +75,44 @@ func Compile(assembly string) ([]byte, error) {
 		case "JMP":
 			dst, err := ParseRaw(args)
 			if err != nil {
-				id := GetLabelID(args, labels)
-				dst = IDToBytecode(id)
+				UpdateQuery(&dst, args, binary, queries)
 			}
 
 			binary = append(binary, 0x0A, dst)
 		case "JZ":
 			dst, err := ParseRaw(args)
 			if err != nil {
-				id := GetLabelID(args, labels)
-				dst = IDToBytecode(id)
+				UpdateQuery(&dst, args, binary, queries)
 			}
 
 			binary = append(binary, 0x0B, dst)
 		case "JN":
 			dst, err := ParseRaw(args)
 			if err != nil {
-				id := GetLabelID(args, labels)
-				dst = IDToBytecode(id)
+				UpdateQuery(&dst, args, binary, queries)
 			}
 
 			binary = append(binary, 0x0C, dst)
 		case "JC":
 			dst, err := ParseRaw(args)
 			if err != nil {
-				id := GetLabelID(args, labels)
-				dst = IDToBytecode(id)
+				UpdateQuery(&dst, args, binary, queries)
 			}
 
 			binary = append(binary, 0x0D, dst)
 		case "CALL":
-			id := GetLabelID(args, labels)
-			dst := IDToBytecode(id)
+			dst, err := ParseRaw(args)
+			if err != nil {
+				UpdateQuery(&dst, args, binary, queries)
+			}
+
 			binary = append(binary, 0x0E, dst)
 		case "RET":
 			binary = append(binary, 0x0F)
+		case "RSH":
+			binary = append(binary, 0x10)
+		case "LSH":
+			binary = append(binary, 0x11)
 		default:
 			number, err := ParseRaw(inst)
 			if err != nil {
@@ -118,19 +123,14 @@ func Compile(assembly string) ([]byte, error) {
 		}
 	}
 
-	// Parse bytecode labels
-	for i := 0; i < len(binary); i++ {
-		if !IsIDBytecode(binary[i]) {
-			continue
-		}
-
-		id := BytecodeToID(binary[i])
-		pos, ok := labelPositions[id]
+	// Parse labels
+	for offset, label := range queries {
+		pos, ok := labels[label]
 		if !ok {
-			return nil, fmt.Errorf("invalid label position at index: %d", i+1)
+			return nil, fmt.Errorf("invalid label \"%s\" position at offset: %d", label, offset)
 		}
 
-		binary[i] = pos
+		binary[offset] = pos
 	}
 
 	return binary, nil
@@ -179,6 +179,7 @@ func ParseRaw(line string) (uint8, error) {
 		number uint64
 		err    error
 	)
+
 	if strings.HasPrefix(line, "0X") {
 		number, err = strconv.ParseUint(line[2:], 16, 8)
 	} else if strings.HasPrefix(line, "0B") {
@@ -194,21 +195,10 @@ func ParseRaw(line string) (uint8, error) {
 	return uint8(number), nil
 }
 
-func GetLabelID(label string, labels map[string]uint8) uint8 {
-	id, ok := labels[label]
-	if !ok {
-		id = uint8(len(labels) + 1)
-		labels[label] = id
-	}
-
-	return id
-}
-
-func UpdateLabels(line string, binary []byte, labels map[string]uint8, labelPositions map[uint8]uint8) string {
+func UpdateLabels(line string, binary []byte, labels map[string]uint8) string {
 	// Find label positions and remove them from the line
 	if labelIndex := strings.Index(line, ":"); labelIndex != -1 {
-		id := GetLabelID(line[:labelIndex], labels)
-		labelPositions[id] = uint8(len(binary))
+		labels[line[:labelIndex]] = uint8(len(binary))
 		line = line[labelIndex+1:]
 	}
 
@@ -216,14 +206,7 @@ func UpdateLabels(line string, binary []byte, labels map[string]uint8, labelPosi
 	return PurifyLine(line)
 }
 
-func IDToBytecode(id uint8) uint8 {
-	return 0x80 | id
-}
-
-func BytecodeToID(bytecode byte) uint8 {
-	return bytecode & 0x7F
-}
-
-func IsIDBytecode(bytecode byte) bool {
-	return bytecode&0x80 == 0x80
+func UpdateQuery(dst *uint8, labelstr string, binary []byte, queries map[uint8]string) {
+	*dst = LABLE_PLACEHOLDER
+	queries[uint8(len(binary)+1)] = labelstr
 }

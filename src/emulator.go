@@ -163,6 +163,15 @@ func (e *PDUAEmulator) Step() error {
 
 		e.ProgramCounter = e.Stack[len(e.Stack)-1]
 		e.Stack = e.Stack[:len(e.Stack)-1]
+	case 0x10:
+		// RSH ACC
+		e.Accumulator >>= 1
+		e.Accumulator &= 0x7F
+		e.ProgramCounter++
+	case 0x11:
+		// LSH ACC
+		e.Accumulator <<= 1
+		e.ProgramCounter++
 	default:
 		return fmt.Errorf("unknown instruction: %x", instruction)
 	}

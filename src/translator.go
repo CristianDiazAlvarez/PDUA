@@ -20,6 +20,8 @@ import "fmt"
  * 0x0D: JC CTE (2 bytes)
  * 0x0E: CALL CTE (2 bytes)
  * 0x0F: RET
+ * 0x10: RSH ACC
+ * 0x11: LSH ACC
  */
 
 type Instruction struct {
@@ -96,6 +98,10 @@ func OpcodeToString(opcode uint8) string {
 		return "CALL"
 	case 0x0F:
 		return "RET"
+	case 0x10:
+		return "RSH ACC"
+	case 0x11:
+		return "LSH ACC"
 	default:
 		return "???"
 	}

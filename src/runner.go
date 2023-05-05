@@ -9,7 +9,7 @@ import (
 const (
 	PaddingX     = 1
 	PaddingY     = 1
-	AutoscrollAt = 4
+	AutoscrollAt = 1.0 / 4.0
 )
 
 type Runner struct {
@@ -129,9 +129,21 @@ func (r *Runner) UpdateAssemblerView(v *gocui.View) {
 		return
 	}
 
-	for _, instruction := range instructions {
-		if instruction.Offset == uint8(r.emulator.ProgramCounter) {
-			//  print white background black text
+	var currentLine int
+	for i, instruction := range instructions {
+		if instruction.Offset == r.emulator.ProgramCounter {
+			currentLine = i
+			break
+		}
+	}
+
+	_, screenHeight := v.Size()
+	for i, instruction := range instructions {
+		if (float32(i) < float32(currentLine) - float32(screenHeight) * AutoscrollAt) {
+			continue
+		}
+
+		if instruction.Offset == r.emulator.ProgramCounter {
 			fmt.Fprintf(v, "\033[30;47m")
 		}
 		fmt.Fprintf(v, "%s\n", instruction)
