@@ -55,6 +55,11 @@ func (r *Runner) SetupGUI(gui *gocui.Gui) error {
 		return err
 	}
 
+	// Halt (step until halt)
+	if err := r.gui.SetKeybinding("", gocui.KeySpace, gocui.ModNone, r.EmulatorFinish); err != nil {
+		return err
+	}
+
 	// Reset
 	if err := r.gui.SetKeybinding("", 'r', gocui.ModNone, r.EmulatorReset); err != nil {
 		return err
@@ -77,6 +82,17 @@ func (r *Runner) Quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
 }
 
+func (r *Runner) EmulatorFinish(g *gocui.Gui, v *gocui.View) error {
+	for !r.emulator.HaltFlag {
+		if err := r.emulator.Step(); err != nil {
+			return err
+		}
+	}
+
+	r.UpdateViews(g)
+	return nil
+}
+
 func (r *Runner) EmulatorReset(g *gocui.Gui, v *gocui.View) error {
 	r.emulator.Reset(true)
 	r.UpdateViews(g)
@@ -84,6 +100,10 @@ func (r *Runner) EmulatorReset(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (r *Runner) EmulatorStep(g *gocui.Gui, v *gocui.View) error {
+	if r.emulator.HaltFlag {
+		return nil
+	}
+
 	if err := r.emulator.Step(); err != nil {
 		return err
 	}
