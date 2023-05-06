@@ -130,9 +130,9 @@ func Compile(assembly string) ([]byte, error) {
 		case "LSH":
 			switch args {
 			case "ACC":
-				binary = append(binary, 0x14)
+				binary = append(binary, 0x13)
 			case "ACC,A":
-				binary = append(binary, 0x15)
+				binary = append(binary, 0x14)
 			default:
 				if !strings.HasPrefix(args, "ACC,") {
 					return nil, fmt.Errorf("invalid instruction at line: %d", i+1)
@@ -143,7 +143,7 @@ func Compile(assembly string) ([]byte, error) {
 					UpdateQuery(&dst, args[4:], binary, queries)
 				}
 
-				binary = append(binary, 0x16, dst)
+				binary = append(binary, 0x15, dst)
 			}
 		case "HLT":
 			binary = append(binary, 0xFF)

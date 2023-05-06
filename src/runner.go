@@ -51,7 +51,7 @@ func (r *Runner) SetupGUI(gui *gocui.Gui) error {
 	}
 
 	// Step (alternative)
-	if err := r.gui.SetKeybinding("", gocui.KeyArrowRight	, gocui.ModNone, r.EmulatorStep); err != nil {
+	if err := r.gui.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone, r.EmulatorStep); err != nil {
 		return err
 	}
 
