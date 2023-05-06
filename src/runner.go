@@ -14,13 +14,20 @@ const (
 
 type Runner struct {
 	gui      *gocui.Gui
+	binary   []byte
 	emulator *PDUAEmulator
 }
 
-func NewRunner(emulator *PDUAEmulator) *Runner {
-	return &Runner{
-		emulator: emulator,
+func NewRunner(binary []byte) (*Runner, error) {
+	emulator := NewPDUAEmulator()
+	if err := emulator.LoadProgram(binary); err != nil {
+		return nil, err
 	}
+
+	return &Runner{
+		binary:   binary,
+		emulator: emulator,
+	}, nil
 }
 
 func (r *Runner) Start() error {
@@ -94,7 +101,8 @@ func (r *Runner) EmulatorFinish(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (r *Runner) EmulatorReset(g *gocui.Gui, v *gocui.View) error {
-	r.emulator.Reset(true)
+	r.emulator.Reset()
+	r.emulator.LoadProgram(r.binary)
 	r.UpdateViews(g)
 	return nil
 }

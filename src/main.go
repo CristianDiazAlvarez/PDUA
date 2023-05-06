@@ -89,12 +89,11 @@ func emulate() error {
 }
 
 func executeEmulation(binary []byte) error {
-	emulator := NewPDUAEmulator()
-	if err := emulator.LoadProgram(binary); err != nil {
+	runner, err := NewRunner(binary)
+	if err != nil {
 		return err
 	}
 
-	runner := NewRunner(emulator)
 	if err := runner.Start(); err != nil {
 		return err
 	}

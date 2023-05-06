@@ -26,7 +26,7 @@ func NewPDUAEmulator() *PDUAEmulator {
 	return emulator
 }
 
-func (e *PDUAEmulator) Reset(keepMemory ...bool) {
+func (e *PDUAEmulator) Reset() {
 	e.ProgramCounter = 0
 	e.Accumulator = 0
 	e.Pointer = 0
@@ -37,10 +37,8 @@ func (e *PDUAEmulator) Reset(keepMemory ...bool) {
 	e.OverflowFlag = false
 	e.HaltFlag = false
 
-	if len(keepMemory) == 0 || !keepMemory[0] {
-		for i := range e.Memory {
-			e.Memory[i] = 0
-		}
+	for i := range e.Memory {
+		e.Memory[i] = 0
 	}
 
 	e.Stack = make([]uint8, 0)
