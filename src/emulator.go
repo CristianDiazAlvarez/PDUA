@@ -35,6 +35,7 @@ func (e *PDUAEmulator) Reset(keepMemory ...bool) {
 	e.ZeroFlag = true
 	e.NegativeFlag = false
 	e.OverflowFlag = false
+	e.HaltFlag = false
 
 	if len(keepMemory) == 0 || !keepMemory[0] {
 		for i := range e.Memory {
