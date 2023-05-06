@@ -12,6 +12,7 @@ type PDUAEmulator struct {
 	ZeroFlag     bool
 	NegativeFlag bool
 	OverflowFlag bool
+	HaltFlag     bool
 
 	// Memory
 	Memory      [256]uint8
@@ -171,9 +172,34 @@ func (e *PDUAEmulator) Step() error {
 		e.Accumulator &= 0x7F
 		e.ProgramCounter++
 	case 0x11:
+		// RSH ACC, A
+		for i := 0; i < int(e.XRegister); i++ {
+			e.Accumulator >>= 1
+			e.Accumulator &= 0x7F
+		}
+		e.ProgramCounter++
+	case 0x12:
+		// RSH ACC, CTE (2 bytes)
+		for i := 0; i < int(e.Memory[e.ProgramCounter+1]); i++ {
+			e.Accumulator >>= 1
+			e.Accumulator &= 0x7F
+		}
+		e.ProgramCounter += 2
+	case 0x13:
 		// LSH ACC
 		e.Accumulator <<= 1
 		e.ProgramCounter++
+	case 0x14:
+		// LSH ACC, A
+		e.Accumulator <<= int(e.XRegister)
+		e.ProgramCounter++
+	case 0x15:
+		// LSH ACC, CTE (2 bytes)
+		e.Accumulator <<= int(e.Memory[e.ProgramCounter+1])
+		e.ProgramCounter += 2
+	case 0xFF:
+		// HLT
+		e.HaltFlag = true
 	default:
 		return fmt.Errorf("unknown instruction: %x", instruction)
 	}

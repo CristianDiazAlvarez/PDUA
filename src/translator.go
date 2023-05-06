@@ -52,7 +52,7 @@ func GetInstructionsFromBinary(binary [256]uint8) ([]Instruction, error) {
 		}
 
 		switch instruction.Opcode {
-		case 0x03, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E:
+		case 0x03, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x12, 0x15:
 			instruction.HasArgument = true
 			instruction.Argument = binary[i+1]
 			i++
@@ -101,7 +101,17 @@ func OpcodeToString(opcode uint8) string {
 	case 0x10:
 		return "RSH ACC"
 	case 0x11:
+		return "RSH ACC, A"
+	case 0x12:
+		return "RSH ACC"
+	case 0x13:
 		return "LSH ACC"
+	case 0x14:
+		return "LSH ACC, A"
+	case 0x15:
+		return "LSH ACC"
+	case 0xFF:
+		return "HLT"
 	default:
 		return "???"
 	}

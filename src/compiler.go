@@ -110,9 +110,43 @@ func Compile(assembly string) ([]byte, error) {
 		case "RET":
 			binary = append(binary, 0x0F)
 		case "RSH":
-			binary = append(binary, 0x10)
+			switch args {
+			case "ACC":
+				binary = append(binary, 0x10)
+			case "ACC,A":
+				binary = append(binary, 0x11)
+			default:
+				if !strings.HasPrefix(args, "ACC,") {
+					return nil, fmt.Errorf("invalid instruction at line: %d", i+1)
+				}
+
+				dst, err := ParseRaw(args[4:])
+				if err != nil {
+					UpdateQuery(&dst, args[4:], binary, queries)
+				}
+
+				binary = append(binary, 0x12, dst)
+			}
 		case "LSH":
-			binary = append(binary, 0x11)
+			switch args {
+			case "ACC":
+				binary = append(binary, 0x14)
+			case "ACC,A":
+				binary = append(binary, 0x15)
+			default:
+				if !strings.HasPrefix(args, "ACC,") {
+					return nil, fmt.Errorf("invalid instruction at line: %d", i+1)
+				}
+
+				dst, err := ParseRaw(args[4:])
+				if err != nil {
+					UpdateQuery(&dst, args[4:], binary, queries)
+				}
+
+				binary = append(binary, 0x16, dst)
+			}
+		case "HLT":
+			binary = append(binary, 0xFF)
 		default:
 			number, err := ParseRaw(inst)
 			if err != nil {
